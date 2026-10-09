@@ -204,10 +204,12 @@ function vHome() {
     ${S.err ? `<p class="err">${esc(S.err)}</p>` : ""}
   </div>
   <div style="text-align:center;margin-top:28px">
-    <button class="link" data-act="copyTransfer">引き継ぎ用URLをコピー</button><br>
-    ${S.toast ? `<p class="muted small" style="margin:4px 0">${esc(S.toast)}</p>` : ""}
     ${mine ? `<button class="link" data-act="stats">みんなの一致率を見る</button><br><button class="link" data-act="editQuiz">この診断を編集する</button><br>` : ""}
     <a class="link" href="${esc(baseUrl())}">自分の診断をつくる</a>
+  </div>
+  <div style="text-align:center;margin-top:28px">
+    <button class="link" style="font-size:12px" data-act="copyTransfer">別の端末で同じ名前を使う人へ：引き継ぎ用URLをコピー</button>
+    ${S.toast ? `<p class="muted small" style="margin:4px 0">${esc(S.toast)}</p>` : ""}
   </div>`;
 }
 
@@ -463,7 +465,7 @@ const ACT = {
     } catch (e) { go("home"); setErr(e); }
   },
   copyTransfer: async () => {
-    S.toast = (await copy(transferUrl())) ? "コピーしました。別の端末でこのURLを開くと、同じ名前で挑戦と推移の確認ができます。" : "コピーできませんでした。";
+    S.toast = (await copy(transferUrl())) ? "コピーしました。別の端末でこのURLを開くと、同じ名前で挑戦できます。" : "コピーできませんでした。";
     render();
   },
   prev: () => { S.idx--; render(); },
