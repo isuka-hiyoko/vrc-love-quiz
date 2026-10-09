@@ -19,6 +19,7 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#3A2C6E 0%,var(--bg) 60%) fixed,var(--bg);color:var(--text);font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans',sans-serif;-webkit-text-size-adjust:100%}
+.trial{background:var(--pink);color:var(--bg);text-align:center;font-size:13px;font-weight:700;padding:6px 16px}
 #app{max-width:520px;margin:0 auto;padding:20px 16px 56px}
 h1,h2{margin:0;font-weight:900;line-height:1.35}
 p{line-height:1.6}
@@ -49,6 +50,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--mint);outline-offse
 </style>
 </head>
 <body>
+<div class="trial">試験運用中：突然変更が入る場合があります</div>
 <div id="app"><p class="muted" style="text-align:center;margin-top:80px">読み込み中…</p></div>
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzWvgCo6UYgwfJby1sz4lJ8oa-WgJXhXTHjxacQtTP7U-4nYWcmNineRIBVqkozSaKD/exec";
@@ -181,7 +183,7 @@ function vLanding() {
   <div style="text-align:center;padding:40px 0 28px">
     <div style="font-size:40px" aria-hidden="true">💞</div>
     <h1 style="font-size:30px;margin-top:8px;letter-spacing:.04em">VRC恋愛理解度診断</h1>
-    <p class="muted" style="margin:8px 0 0"><span style="wont-weight: bold;">現在試験運用中につき、突然変更が入る場合があります。</span><br><br>あなたについての2択に${TOTAL}問以上答えて、Xで配ろう。<br>みんながどれだけあなたをわかっているか、ランキングでわかります。</p>
+    <p class="muted" style="margin:8px 0 0">あなたについての2択に${TOTAL}問以上答えて、Xで配ろう。<br>みんながどれだけあなたをわかっているか、ランキングでわかります。</p>
   </div>
   <div class="stack">
     <button class="btn primary" data-act="newQuiz">診断をつくる</button>
