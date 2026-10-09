@@ -51,9 +51,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--mint);outline-offse
 <body>
 <div id="app"><p class="muted" style="text-align:center;margin-top:80px">読み込み中…</p></div>
 <script>
-// ▼ GASのウェブアプリURLを貼り付けてください
 const API_URL = "https://script.google.com/macros/s/AKfycbzWvgCo6UYgwfJby1sz4lJ8oa-WgJXhXTHjxacQtTP7U-4nYWcmNineRIBVqkozSaKD/exec";
-// ▲
 const TOTAL = 25;   // 1回の挑戦で出題する問題数（Code.gs の ASK と同じ）
 const MAX_Q = 100;  // 登録できる問題の上限（Code.gs の MAX_QUESTIONS と同じ）
 const QUIZ_TITLE = "VRC恋愛理解度診断"; // 診断名は固定
@@ -180,7 +178,7 @@ function vLanding() {
   <div style="text-align:center;padding:40px 0 28px">
     <div style="font-size:40px" aria-hidden="true">💞</div>
     <h1 style="font-size:30px;margin-top:8px;letter-spacing:.04em">VRC恋愛理解度診断</h1>
-    <p class="muted" style="margin:8px 0 0">あなたについての2択に${TOTAL}問以上答えて、Xで配ろう。<br>みんながどれだけあなたをわかっているか、ランキングでわかります。</p>
+    <p class="muted" style="margin:8px 0 0"><span style="wont-weight: bold;">現在試験運用中につき、突然変更が入る場合があります。</span><br><br>あなたについての2択に${TOTAL}問以上答えて、Xで配ろう。<br>みんながどれだけあなたをわかっているか、ランキングでわかります。</p>
   </div>
   <div class="stack">
     <button class="btn primary" data-act="newQuiz">診断をつくる</button>
