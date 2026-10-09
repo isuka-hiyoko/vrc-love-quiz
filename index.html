@@ -160,7 +160,10 @@ function playerKey() {
   }
   return k;
 }
-const transferUrl = () => quizUrl(S.id) + "#p=" + playerKey();
+const transferUrl = () => {
+  const n = (S.name || "").trim() || ls.get("name", "");
+  return quizUrl(S.id) + "#p=" + playerKey() + (n ? "&n=" + encodeURIComponent(n) : "");
+};
 
 // ---------- state ----------
 const S = {
@@ -533,14 +536,30 @@ $app.addEventListener("input", (ev) => {
   path.reduce((o, k) => o[k], S)[last] = ev.target.value;
 });
 
+// 引き継ぎ用URL（#p=鍵&n=名前）を読み込み、URLから消す
+function applyTransfer() {
+  const hp = new URLSearchParams(location.hash.slice(1));
+  const pk = hp.get("p"), n = (hp.get("n") || "").trim().slice(0, 20);
+  if (pk && /^[0-9a-f]{16,64}$/.test(pk)) {
+    ls.set("playerKey", pk);
+    if (n) { S.name = n; ls.set("name", n); }
+    S.toast = "引き継ぎました。" + (n ? `「${n}」の名前で` : "最初の端末と同じ名前で") + "挑戦できます。";
+  }
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+// 同じページを開いたタブにURLを貼ると読み込み直されないので、ここでも受け取る
+window.addEventListener("hashchange", () => {
+  if (!new URLSearchParams(location.hash.slice(1)).get("p")) return;
+  applyTransfer();
+  if (S.quiz) go("home"); else render();
+});
+
 // ---------- boot ----------
 (async function boot() {
   const params = new URLSearchParams(location.search);
   S.id = params.get("q");
-  const hp = new URLSearchParams(location.hash.slice(1));
-  const k = hp.get("k"), pk = hp.get("p");
-  if (pk && /^[0-9a-f]{16,64}$/.test(pk)) ls.set("playerKey", pk);
-  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  const k = new URLSearchParams(location.hash.slice(1)).get("k");
+  applyTransfer();
   if (!S.id) return go("landing");
   try {
     S.quiz = await api("getQuiz", { id: S.id });
