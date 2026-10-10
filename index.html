@@ -202,6 +202,7 @@ function vHome() {
     <div style="font-size:40px" aria-hidden="true">💞</div>
     <h1 style="font-size:28px;margin-top:8px">${QUIZ_TITLE}</h1>
     <p class="muted" style="margin:8px 0 0">${esc(z.creator)}さんならどっちを選ぶ？<br>${z.poolSize > z.ask ? `${z.poolSize}問の中からランダムに${z.ask}問、` : `${z.ask}問の`}2択で理解度を診断します。<br>挑戦は1日1回${z.poolSize > z.ask ? "。毎回問題が変わります" : ""}。</p>
+    <p class="muted small" style="margin:12px 0 0">正解は表示されません。${esc(z.creator)}さんとの交流を通して知っていってください。</p>
   </div>
   <div class="stack">
     <label class="muted small" for="nm">あなたの名前（ランキングに表示されます）</label>
