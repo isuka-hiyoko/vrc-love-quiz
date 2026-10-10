@@ -153,7 +153,7 @@ function saveMine(id, creator, key) {
 }
 const keyFor = (id) => (myQuizzes().find((x) => x.id === id) || {}).key;
 
-// 回答者の本人確認用の鍵（端末ごと）。引き継ぎ用URLで別の端末に移せる
+// 回答者の本人確認用の鍵（端末ごと）。別の端末で同じ名前を使うときは、確認してから付け替える
 function playerKey() {
   let k = ls.get("playerKey", "");
   if (!k) {
@@ -162,16 +162,18 @@ function playerKey() {
   }
   return k;
 }
-const transferUrl = () => {
-  const n = (S.name || "").trim() || ls.get("name", "");
-  return quizUrl(S.id) + "#p=" + playerKey() + (n ? "&n=" + encodeURIComponent(n) : "");
-};
+
+// 診断ごとに使った名前を覚える（新しい診断では最後に使った名前を入れておく）
+const nameFor = (id) => ls.get("names", {})[id] || ls.get("name", "");
+function saveName(id, n) {
+  const m = ls.get("names", {}); m[id] = n; ls.set("names", m); ls.set("name", n);
+}
 
 // ---------- state ----------
 const S = {
   view: "loading", id: null, quiz: null, err: "",
   name: ls.get("name", ""), idx: 0, answers: [], questions: [], token: null, result: null,
-  ranking: null, detail: null, stats: null, ed: null, created: null, toast: "",
+  ranking: null, detail: null, stats: null, ed: null, created: null, toast: "", confirm: "",
 };
 function go(view, patch) { Object.assign(S, patch || {}, { view, err: "" }); render(); window.scrollTo(0, 0); }
 function setErr(e) { S.err = e.message || String(e); render(); }
@@ -204,17 +206,19 @@ function vHome() {
   <div class="stack">
     <label class="muted small" for="nm">あなたの名前（ランキングに表示されます）</label>
     <input id="nm" class="input" maxlength="20" value="${esc(S.name)}" placeholder="名前を入力" data-bind="name">
-    <button class="btn primary" data-act="start">診断をはじめる</button>
+    ${S.confirm ? `<div class="card" style="border-color:var(--pink)">
+      <p style="margin:0 0 12px">「${esc(S.confirm)}」は、別の端末（または別のブラウザ）で使われている名前です。<br>あなた本人なら、このまま続けてください。記録も引き継がれます。</p>
+      <div class="stack">
+        <button class="btn primary" data-act="start" data-takeover="1">本人なので続ける</button>
+        <button class="btn ghost" data-act="cancelConfirm">別の名前にする</button>
+      </div>
+    </div>` : `<button class="btn primary" data-act="start">診断をはじめる</button>`}
     <button class="btn ghost" data-act="ranking">ランキングを見る</button>
     ${S.err ? `<p class="err">${esc(S.err)}</p>` : ""}
   </div>
   <div style="text-align:center;margin-top:28px">
     ${mine ? `<button class="link" data-act="stats">みんなの一致率を見る</button><br><button class="link" data-act="editQuiz">この診断を編集する</button><br>` : ""}
     <a class="link" href="${esc(baseUrl())}">自分の診断をつくる</a>
-  </div>
-  <div style="text-align:center;margin-top:28px">
-    <button class="link" style="font-size:12px" data-act="copyTransfer">別の端末で同じ名前を使う人へ：引き継ぎ用URLをコピー</button>
-    ${S.toast ? `<p class="muted small" style="margin:4px 0">${esc(S.toast)}</p>` : ""}
   </div>`;
 }
 
@@ -459,20 +463,20 @@ const ACT = {
   landing: () => { history.replaceState(null, "", baseUrl()); go("landing", { id: null, quiz: null }); },
   newQuiz: () => go("edit", { ed: newEditor(null) }),
   home: () => go(S.quiz ? "home" : "landing"),
-  start: async () => {
+  start: async (el) => {
     const n = S.name.trim();
-    if (!n) { go("home"); S.err = "名前を入力してください。"; return render(); }
-    ls.set("name", n);
-    go("loading");
+    if (!n) { go("home", { confirm: "" }); S.err = "名前を入力してください。"; return render(); }
+    // 確認画面のあとで名前を書き換えた場合は、もう一度確認する
+    const takeover = !!el.dataset.takeover && S.confirm === n;
+    go("loading", { confirm: "" });
     try {
-      const r = await api("start", { id: S.id, name: n, playerKey: playerKey() });
+      const r = await api("start", { id: S.id, name: n, playerKey: playerKey(), takeover });
+      if (r.confirm) return go("home", { confirm: n });
+      saveName(S.id, n);
       go("quiz", { idx: 0, answers: [], questions: r.questions, token: r.token });
     } catch (e) { go("home"); setErr(e); }
   },
-  copyTransfer: async () => {
-    S.toast = (await copy(transferUrl())) ? "コピーしました。別の端末でこのURLを開くと、同じ名前で挑戦できます。" : "コピーできませんでした。";
-    render();
-  },
+  cancelConfirm: () => { go("home", { confirm: "" }); document.getElementById("nm")?.select(); },
   prev: () => { S.idx--; render(); },
   choose: (el) => {
     S.answers[S.idx] = el.dataset.k;
@@ -538,31 +542,14 @@ $app.addEventListener("input", (ev) => {
   path.reduce((o, k) => o[k], S)[last] = ev.target.value;
 });
 
-// 引き継ぎ用URL（#p=鍵&n=名前）を読み込み、URLから消す
-function applyTransfer() {
-  const hp = new URLSearchParams(location.hash.slice(1));
-  const pk = hp.get("p"), n = (hp.get("n") || "").trim().slice(0, 20);
-  if (pk && /^[0-9a-f]{16,64}$/.test(pk)) {
-    ls.set("playerKey", pk);
-    if (n) { S.name = n; ls.set("name", n); }
-    S.toast = "引き継ぎました。" + (n ? `「${n}」の名前で` : "最初の端末と同じ名前で") + "挑戦できます。";
-  }
-  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
-}
-// 同じページを開いたタブにURLを貼ると読み込み直されないので、ここでも受け取る
-window.addEventListener("hashchange", () => {
-  if (!new URLSearchParams(location.hash.slice(1)).get("p")) return;
-  applyTransfer();
-  if (S.quiz) go("home"); else render();
-});
-
 // ---------- boot ----------
 (async function boot() {
   const params = new URLSearchParams(location.search);
   S.id = params.get("q");
   const k = new URLSearchParams(location.hash.slice(1)).get("k");
-  applyTransfer();
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   if (!S.id) return go("landing");
+  S.name = nameFor(S.id);
   try {
     S.quiz = await api("getQuiz", { id: S.id });
     if (k) saveMine(S.id, S.quiz.creator, k);
